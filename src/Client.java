@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JOptionPane;
+
 import processing.core.PApplet;
 
 public class Client extends PApplet {
@@ -86,6 +88,17 @@ public class Client extends PApplet {
 			e.printStackTrace();
 		}
 
+	}
+
+	public void exit() {
+		try {
+			promptServer(new Socket(host, port), "QUIT" + id);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		this.exitActual();
 	}
 
 	public void updateLocation() {
@@ -174,9 +187,10 @@ public class Client extends PApplet {
 				for (int i = 0; i < l; i++) {
 					input += (char) in.read();
 				}
-			} else {
-				// TODO
-				// Invalid Message Format
+			}
+			if (input.startsWith("QUIT")) {
+				JOptionPane.showMessageDialog(null, "You Have Died");
+				this.exit();
 			}
 
 			inputStream.close();

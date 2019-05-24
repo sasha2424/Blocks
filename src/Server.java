@@ -10,6 +10,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 public class Server {
@@ -23,8 +25,8 @@ public class Server {
 	public static InputStream inputStream;
 	public static OutputStream outputStream;
 
-	public static final float WIDTH = 500;
-	public static final float HEIGHT = 500;
+	public static final float WIDTH = 2000;
+	public static final float HEIGHT = 2000;
 
 	static long time = System.currentTimeMillis();
 	static long tickTime = 100;
@@ -42,6 +44,8 @@ public class Server {
 			while (true) {
 				if (System.currentTimeMillis() - time > tickTime) {
 					doCollisions();
+					removeDead();
+					spawnNew();
 					time = System.currentTimeMillis();
 				}
 				try {
@@ -116,11 +120,37 @@ public class Server {
 			for (int i = 0; i < blocks.size(); i++) {
 				Player block = blocks.get(i);
 				if (p.collideBlock(block)) {
-					System.out.println("HIT");
 					blocks.remove(block);
 					i--;
 				}
 			}
+
+			for (int id2 : s) {
+				Player p2 = playerMap.get(id2);
+				if (id2 == id) {
+					continue;
+				}
+				p.collidePlayer(p2);
+			}
+		}
+	}
+
+	private static void removeDead() {
+		Set<Integer> s = playerMap.keySet();
+		Set<Integer> remove = new HashSet<Integer>();
+		for (int id : s) {
+			if (playerMap.get(id).isDead)
+				remove.add(id);
+		}
+		for (int id : remove) {
+			playerMap.remove(id);
+		}
+
+	}
+
+	private static void spawnNew() {
+		if (blocks.size() < 30 && Math.random() < .2) {
+			blocks.add(new Player((float) (Math.random() * WIDTH), (float) (Math.random() * HEIGHT)));
 		}
 	}
 
@@ -130,6 +160,10 @@ public class Server {
 			int id = Integer.parseInt(coords[0]);
 			float x = Float.parseFloat(coords[1]);
 			float y = Float.parseFloat(coords[2].trim());
+
+			if (!playerMap.containsKey(id) || playerMap.get(id).isDead) {
+				return "QUIT";
+			}
 
 			String r = "";
 			for (int i : playerMap.keySet()) {
