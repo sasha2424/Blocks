@@ -8,6 +8,8 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import processing.core.PApplet;
 
@@ -16,11 +18,13 @@ public class Client extends PApplet {
 	private String host = "127.0.0.1";
 	private int port = 59090;
 
+	Pattern pattern = Pattern.compile("[\\[(<][\\w.-]+,[\\w.-]+[\\])>]");
+
 	int id;
 	float x;
 	float y;
 
-	final float size = 50;
+	final float size = Player.size;
 	final float speed = 5;
 	int direction = 0; // 0 right 1 down 2 left 3 up
 
@@ -67,7 +71,7 @@ public class Client extends PApplet {
 		try {
 			socket = new Socket(host, port);
 			if (key == 'q') {
-				
+
 				promptServer(socket, "QUIT" + id);
 				this.exit();
 			} else {
@@ -127,21 +131,26 @@ public class Client extends PApplet {
 	}
 
 	private void drawUpdate(String update) {
-		for (String p : update.split("\n")) {
-			float x = 0;
-			float y = 0;
-			for (String block : p.split("[\\[(]\\w*,\\w*[\\])]")) {
-				if (block.startsWith("[")) {
-					x = Float.parseFloat(block.substring(1, block.indexOf(",")));
-					y = Float.parseFloat(block.substring(block.indexOf(",") + 1, block.length() - 1));
-					fill(100);
-					rect(width / 2 + x - this.x, height / 2 + y - this.y, size, size);
-				} else {
-					float xs = Float.parseFloat(block.substring(1, block.indexOf(",")));
-					float ys = Float.parseFloat(block.substring(block.indexOf(",") + 1, block.length() - 1));
-					fill(200);
-					rect(width / 2 + x + xs * size - this.x, height / 2 + y + ys * size - this.y, size, size);
-				}
+		float x = 0;
+		float y = 0;
+		Matcher m = pattern.matcher(update);
+		while (m.find()) {
+			String block = m.group();
+			if (block.startsWith("[")) {
+				x = Float.parseFloat(block.substring(1, block.indexOf(",")));
+				y = Float.parseFloat(block.substring(block.indexOf(",") + 1, block.length() - 1));
+				fill(100);
+				rect(width / 2 + x - this.x, height / 2 + y - this.y, size, size);
+			} else if (block.startsWith("<")) {
+				x = Float.parseFloat(block.substring(1, block.indexOf(",")));
+				y = Float.parseFloat(block.substring(block.indexOf(",") + 1, block.length() - 1));
+				fill(0, 0, 100);
+				rect(width / 2 + x - this.x, height / 2 + y - this.y, size, size);
+			} else if (block.startsWith("(")) {
+				float xs = Float.parseFloat(block.substring(1, block.indexOf(",")));
+				float ys = Float.parseFloat(block.substring(block.indexOf(",") + 1, block.length() - 1));
+				fill(200);
+				rect(width / 2 + x + xs * size - this.x, height / 2 + y + ys * size - this.y, size, size);
 			}
 		}
 	}

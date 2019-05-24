@@ -10,10 +10,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 public class Server {
 
 	public static HashMap<Integer, Player> playerMap;
+	public static ArrayList<Player> blocks;
 	public static int ID = (int) (Math.random() * 10);
 
 	public static ServerSocket server;
@@ -24,12 +26,24 @@ public class Server {
 	public static final float WIDTH = 500;
 	public static final float HEIGHT = 500;
 
+	static long time = System.currentTimeMillis();
+	static long tickTime = 100;
+
 	public static void main(String[] args) {
 		playerMap = new HashMap<Integer, Player>();
+		blocks = new ArrayList<Player>();
+
+		for (int i = 0; i < 10; i++) {
+			blocks.add(new Player((float) (Math.random() * WIDTH), (float) (Math.random() * HEIGHT)));
+		}
 
 		try {
 			server = new ServerSocket(59090);
 			while (true) {
+				if (System.currentTimeMillis() - time > tickTime) {
+					doCollisions();
+					time = System.currentTimeMillis();
+				}
 				try {
 					socket = server.accept();
 					inputStream = socket.getInputStream();
@@ -55,7 +69,7 @@ public class Server {
 						playerMap.put(ID, p);
 						System.out.println("New Player: " + ID + "  " + p.toString());
 						output = ID + "," + p.x + "," + p.y;
-						ID += (int) (Math.random() * 10);
+						ID += 1 + (int) (Math.random() * 10);
 
 					} else if (input.startsWith("QUIT")) {
 						int id = Integer.parseInt(input.substring(4));
@@ -95,6 +109,21 @@ public class Server {
 
 	}
 
+	private static void doCollisions() {
+		Set<Integer> s = playerMap.keySet();
+		for (int id : s) {
+			Player p = playerMap.get(id);
+			for (int i = 0; i < blocks.size(); i++) {
+				Player block = blocks.get(i);
+				if (p.collideBlock(block)) {
+					System.out.println("HIT");
+					blocks.remove(block);
+					i--;
+				}
+			}
+		}
+	}
+
 	public static String getDataFor(String input) {
 		String[] coords = input.split(",");
 		try {
@@ -109,9 +138,11 @@ public class Server {
 					p.x = x;
 					p.y = y;
 					bindPlayer(p);
-				} else {
-					r += p.toString() + "\n";
 				}
+				r += p.toString() + "\n";
+			}
+			for (Player p : blocks) {
+				r += p.toStringBlock() + "\n";
 			}
 			if (r.length() == 0) {
 				return "";
