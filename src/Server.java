@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,6 +94,8 @@ public class Server {
 					outputStream.close();
 					socket.close();
 				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				} catch (SocketException e) {
 					e.printStackTrace();
 				} finally {
 					socket.close();
